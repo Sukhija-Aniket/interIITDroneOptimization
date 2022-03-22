@@ -84,9 +84,9 @@ struct drone{
 struct singleDrone{
     int droneType;
     int index;
-    int availableTime = 0;
+    double availableTime = 0;
     int remainingBattery;
-    int nextAvailableTime;
+    double nextAvailableTime;
 
     singleDrone(int dtype,int time,int battery,int indexCounter){
         droneType = dtype;
@@ -151,11 +151,21 @@ vector<drone>drones;
 
 // utility functions
 int getSeconds(string time){
-    int hours = stoi(time.substr(0,2)) - 8;
-    int minutes = stoi(time.substr(3,2));
-    int seconds = stoi(time.substr(6,2));
-    seconds += hours*3600 + minutes * 60;
-    return seconds;
+    int counter = 0;
+    string hours="",minutes="",seconds="";
+    for(auto x:time){
+        if(x==':'){
+            counter++;
+        } else if(counter == 0){
+            hours += x;
+        } else if(counter == 1){
+            minutes += x;
+        } else if(counter == 2){
+            seconds += x;
+        }
+    }
+    int Seconds = (stoi(hours)-8) * 3600 + stoi(minutes)*60 + stoi(seconds);
+    return Seconds;
 }
 
 bool demandComparator(demand &a,demand &b){
@@ -183,7 +193,7 @@ bool checkOptimalDrone(demand &curDemand,singleDrone &curDrone,vector<singleDron
     double distanceXY = sqrt(curDemand.x*curDemand.x + curDemand.y*curDemand.y);
     double distanceZ = curDemand.z;
     double timeUsed = distanceXY/netSpeedXY + distanceZ/netSpeedZUp;
-    
+    // cout<<curDemand.demandId<<": "<<curDemand.deliveryEndTime<<" "<<curDrone.availableTime + timeUsed + 360<<endl;
     if(curDrone.availableTime + timeUsed + 360 > curDemand.deliveryEndTime) return false;
     double extraTime = curDrone.availableTime + timeUsed + 180;
     // cout<<" this line "<<netWeight<<" "<<tempDrone.ec.a<<" "<<tempDrone.ec.b<<" "<<netSpeedXY<<" "<<distanceXY<<endl;
@@ -196,12 +206,17 @@ bool checkOptimalDrone(demand &curDemand,singleDrone &curDrone,vector<singleDron
     // cout<<curDrone.remainingBattery<<" battery "<<batteryUsage<<endl;
     if(batteryUsage > curDrone.remainingBattery) return false;
     timeUsed += 360 + (distanceXY + distanceZ)/netSpeedReturn;
-    timeUsed += max(0.0,double((2000-(curDrone.remainingBattery - batteryUsage))*36)/50LL);
-    // timeUsed += double((tempDrone.batteryCapacity -(curDrone.remainingBattery-batteryUsage))*36)/50;
+    // cout<<"time "<<timeUsed<<endl;
+    // timeUsed += max(0.0,double((2000-(curDrone.remainingBattery - batteryUsage))*36)/50LL);
+    timeUsed += double((tempDrone.batteryCapacity -(curDrone.remainingBattery-batteryUsage))*36)/50;
+    // cout<<"time used "<<double((tempDrone.batteryCapacity -(curDrone.remainingBattery-batteryUsage))*36)/50<<endl;
     
     singleDrone tempValidDrone = curDrone;
+
     timeUsed += max(0.0,curDemand.deliveryStartTime - extraTime);
     tempValidDrone.nextAvailableTime = timeUsed + curDrone.availableTime;
+
+    // cout<<"assigning: "<<timeUsed<<" "<<curDrone.availableTime<<endl;
     // cout<<timeUsed<<" "<<curDrone.availableTime<<" "<<tempValidDrone.nextAvailableTime<<endl;
     validDrones.push_back(tempValidDrone);
     return true;
@@ -209,7 +224,7 @@ bool checkOptimalDrone(demand &curDemand,singleDrone &curDrone,vector<singleDron
 
 bool validDroneComparator(singleDrone &a,singleDrone &b){
     if(a.droneType == b.droneType) return a.availableTime>b.availableTime;
-    else return a.droneType > b.droneType;
+    else return a.droneType < b.droneType;
 }
 
 int main() {
@@ -230,7 +245,7 @@ int main() {
     items.push_back(tempItem);
 
     fstream file;
-    file.open("Demand.csv",ios::in);
+    file.open("Demand_Day2.csv",ios::in);
     string word,lines;
     vector<string>row;
     vector<chargingInfo>chargingInfos;
@@ -267,7 +282,7 @@ int main() {
         tempDrone = drone(5,10000,5,10,5000,4,50,25);
         drones.push_back(tempDrone); 
     getline(file,lines);
-    int cnt = 30;
+    int cnt = 50;
     while(file && cnt>0){
         cnt--;
         row.clear();
@@ -285,7 +300,7 @@ int main() {
     file.close();
     // input file 2;
     cout<<"chal ja bc"<<endl;
-    file.open("Parameters.csv",ios::in);
+    file.open("Parameters1.csv",ios::in);
     int maxSpeed;
     double chargingCost;
     int rownumber=0;
@@ -473,11 +488,16 @@ int main() {
     // cout<<"singleDrones "<<singleDrones.size()<<endl;
     // cout<<"demands "<<demands.size()<<endl;
     int demandsMet=0;
+    vector<int>tempDemandId;
     sort(demands.begin(),demands.end(),demandComparator);
     for(auto curDemand:demands){
+        bool checker = false;
         vector<singleDrone>validDrones;
         for(auto curDrone:singleDrones){
-            checkOptimalDrone(curDemand,curDrone,validDrones);
+            checker |= checkOptimalDrone(curDemand,curDrone,validDrones);
+        }
+        if(checker == false) {
+            tempDemandId.push_back(curDemand.demandId);
         }
         sort(validDrones.begin(),validDrones.end(),validDroneComparator);
         // cout<<"size "<<validDrones.size()<<endl;
@@ -485,10 +505,13 @@ int main() {
             demandsMet++;
             singleDrones[validDrones[0].index].availableTime = validDrones[0].nextAvailableTime;
             cout<<validDrones[0].nextAvailableTime<<" "<<validDrones[0].index<<endl<<endl;
-            singleDrones[validDrones[0].index].remainingBattery = 2000; 
+            // singleDrones[validDrones[0].index].remainingBattery = 2000; 
             // drones[singleDrones[validDrones[0].index].droneType].batteryCapacity;
         }
 
+    }
+    for(auto x:tempDemandId){
+        cout<<"id is :"<<x<<endl;
     }
     int sz = demands.size();
     cout<<double(demandsMet)/sz<<endl;
