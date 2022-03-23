@@ -670,23 +670,25 @@ int main() {
     
     sort(outputPath.begin(), outputPath.end(), outputPathComparator);
     ofstream myfile;
+    myfile.open ("outputPath.csv");
+    myfile<<"demandId,droneId,day,time,x,y,z,activity,speed,batteryConsumed,energyCost,totalWeight\n";
+    
     for(auto row:outputPath){
-        myfile.open 
-        outputPath.csv<<"%d",row.demandId<<endl;
-        // cout<<row.demandId<<",";
-        // cout<<row.droneId<<",";
-        // cout<<row.day<<",";
-        // cout<<row.time<<",";
-        // cout<<row.x<<",";
-        // cout<<row.y<<",";
-        // cout<<row.z<<",";
-        // cout<<row.activity<<",";
-        // cout<<row.speed<<",";
-        // cout<<row.batteryConsumed<<",";
-        // cout<<row.energyCost<<",";
-        // cout<<row.totalWeight;
-        // cout<<endl;
+        myfile<<row.demandId<<",";
+        myfile<<row.droneId<<",";
+        myfile<<row.day<<",";
+        myfile<<row.time<<",";
+        myfile<<row.x<<",";
+        myfile<<row.y<<",";
+        myfile<<row.z<<",";
+        myfile<<row.activity<<",";
+        myfile<<row.speed<<",";
+        myfile<<row.batteryConsumed<<",";
+        myfile<<row.energyCost<<",";
+        myfile<<row.totalWeight;
+        myfile<<endl;
     }
+    myfile.close();
     // vector<energyConsumption> energyConsumptions;
     // vector<speedProfile>speedProfiles;
 
