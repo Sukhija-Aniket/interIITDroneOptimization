@@ -129,12 +129,12 @@ struct dronePathOutput{
     int demandId;
     string droneId;
     string day;
-    int x,y,z;
+    double x,y,z;
     string activity;
     int speed;
     double batteryConsumption;
     double EnergyCost;
-    int totalWeight;
+    int totalWeight = 0;
 };
 
 struct noFlyZone{
@@ -144,8 +144,8 @@ struct noFlyZone{
 };
 
 struct outputPathRow{
-    int demandId,time, speed,totalWeight;
-    double x,y,z, batteryConsumed, energyCost;
+    int demandId,time,totalWeight = 0;
+    double x,y,z,speed, batteryConsumed, energyCost;
     int droneId;
     string day,activity;
     void printParams(){
@@ -257,7 +257,7 @@ bool checkOptimalDrone(demand &curDemand,singleDrone &curDrone,vector<singleDron
     return true;
 }
 
-void AssignOutput(outputPathRow &outputRow, int demandId, int droneId, string day,int time, double x,double y, double z, string activity, double speed, double batteryConsumed, double energyCost, double weight){
+void AssignOutput(outputPathRow &outputRow, int demandId, int droneId, string day,int time, double x,double y, double z, string activity, double speed, double batteryConsumed, double energyCost, int weight){
     outputRow.demandId = demandId;
     outputRow.droneId = droneId;
     outputRow.day = day;
@@ -312,7 +312,7 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
 
     for(int i = ceil(droneStartTime);i<=droneEndTime;i++){
         outputPathRow outputRow;
-        int iamx,iamy,iamz;
+        double iamx,iamy,iamz;
         if(i<=droneStartTime+warehouseResting){
             iamx = 0;
             iamy = 0;
