@@ -1,5 +1,5 @@
 DroneID, Day, RestingTime (s), Charging time (s), Maintainance Cost ($), Energy Cost ($)
-30,Day 1,7863,5638,6.34472,8.1995e+06
+30,Day 1,7863,5638,0,8.1995e+06
 27,Day 1,9846,3325,0,3.94112e+06
 25,Day 1,7916,3993,0,1.95327e+06
 10,Day 1,1515,1380,0,424558

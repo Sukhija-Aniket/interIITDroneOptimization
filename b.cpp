@@ -225,8 +225,9 @@ int getSeconds(string time){
     int Seconds = (stoi(hours)-8) * 3600 + stoi(minutes)*60 + stoi(seconds);
     return Seconds;
 }
-
+map<string, int> demandIdmapping;
 string convertToString(int x){
+    int y = x;
     x++;
     int counter = 0;
     for(int i=0;i<6;i++){
@@ -236,6 +237,7 @@ string convertToString(int x){
             string s="";
             s += "D" + to_string(i+1);
             s += char(x+64);
+            demandIdmapping[s] = y;
             return s;
         }
     }
