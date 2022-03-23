@@ -179,7 +179,7 @@ struct outputPathRow{
     }
 };
 struct outputCostRow{
-    int droneId;
+    string droneId;
     string day;
     double restingTime, chargingTime, maintainanceCost, energyCost;
     void printParams(){
@@ -320,13 +320,13 @@ void AssignOutputCost(outputCostRow &outputRow, int droneId, string day, double 
     outputRow.energyCost = energyCost;
 }
 
-void changeMapParams(unordered_map<int, outputCostRow> &outputCostMap,vector<string> row){
+void changeMapParams(unordered_map<string, outputCostRow> &outputCostMap,vector<string> row){
     if(row.size()==0)
         return;
-    outputCostMap[stoi(row[1])].droneId = stoi(row[1]);
-    outputCostMap[stoi(row[1])].restingTime += row[7][0]=='R';
-    outputCostMap[stoi(row[1])].chargingTime += row[7][0]=='C';
-    outputCostMap[stoi(row[1])].day = "Day 1";
+    outputCostMap[row[1]].droneId = row[1];
+    outputCostMap[row[1]].restingTime += row[7][0]=='R';
+    outputCostMap[row[1]].chargingTime += row[7][0]=='C';
+    outputCostMap[row[1]].day = "Day 1";
 
     unordered_map<int, pair<double, double>> mapper;
     mapper[1] = {10,5/3600.0};
@@ -336,8 +336,8 @@ void changeMapParams(unordered_map<int, outputCostRow> &outputCostMap,vector<str
     mapper[5] = {30,20/3600.0};
     mapper[6] = {50,25/3600.0};
 
-    outputCostMap[stoi(row[1])].maintainanceCost += ((row[7][0] == 'T')?(mapper[drones[stoi(row[1])].droneType+1].second):0);
-    outputCostMap[stoi(row[1])].energyCost += stod(row[10]);
+    outputCostMap[row[1]].maintainanceCost += ((row[7][0] == 'T')?(mapper[drones[stoi(row[1])].droneType+1].second):0);
+    outputCostMap[row[1]].energyCost += stod(row[10]);
 }
 
 void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
@@ -843,7 +843,7 @@ int main() {
     fstream file;
     file.open("outputPath.csv",ios::in);
     string word,lines;
-    unordered_map<int,outputCostRow> outputCostMap;
+    unordered_map<string,outputCostRow> outputCostMap;
     getline(file,lines);
     while(file){
         row.clear();
@@ -854,9 +854,9 @@ int main() {
         }
         changeMapParams(outputCostMap, row);
     }
-    for(auto drone:singleDrones){
-        outputCostMap[drone.index].maintainanceCost += drone.maintainanceCost;
-    }
+    // for(auto drone:singleDrones){
+    //     outputCostMap[drone.index].maintainanceCost += drone.maintainanceCost;
+    // }
     ofstream myfile;
     myfile.open ("outputCost.csv");
     myfile<<"DroneID, Day, RestingTime (s), Charging time (s), Maintainance Cost ($), Energy Cost ($)\n";
