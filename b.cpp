@@ -146,7 +146,34 @@ struct noFlyZone{
 struct outputPathRow{
     int demandId,time, speed,totalWeight;
     double x,y,z, batteryConsumed, energyCost;
-    string droneId,day,activity;
+    int droneId;
+    string day,activity;
+    void printParams(){
+        cout<<"  DemandId is "<<demandId;
+        cout<<endl;
+        cout<<"  Time is "<<time;
+        cout<<endl;
+        cout<<"  Speed is "<<speed;
+        cout<<endl;
+        cout<<"  TotalWeight is "<<totalWeight;
+        cout<<endl;
+        cout<<"  X is "<<x;
+        cout<<endl;
+        cout<<"  Y is "<<y;
+        cout<<endl;
+        cout<<"  Z is "<<z;
+        cout<<endl;
+        cout<<"  batteryConsumed is "<<batteryConsumed;
+        cout<<endl;
+        cout<<"  energyCost is "<<energyCost;
+        cout<<endl;
+        cout<<"  droneId is "<<droneId;
+        cout<<endl;
+        cout<<"  day is "<<day;
+        cout<<endl;
+        cout<<"  Activity is "<<activity;
+        cout<<endl;
+    }
 };
 
 // global variables
@@ -329,7 +356,15 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
         else{
             cout<<"MAdarchod case\n";
         }
+        // cout<<"Params of row are-:\n";
+        // outputRow.printParams();
+        // cout<<endl;
         outputPath.push_back(outputRow);
+        // int x = outputPath.size();
+        // cout<<"Params of row are-:\n";
+        // outputPath[x-1].printParams();
+        // cout<<endl;
+        // cout<<"-----------------\n";
     }
 }
 
@@ -416,7 +451,7 @@ int main() {
     }
     file.close();
     // input file 2;
-    cout<<"chal ja bc"<<endl;
+    // cout<<"chal ja bc"<<endl;
     file.open("Parameters1.csv",ios::in);
     int maxSpeed;
     int rownumber=0;
@@ -621,36 +656,35 @@ int main() {
             demandsMet++;
             OptimalDroneParamsPusher(curDemand, validDrones[0]);
             singleDrones[validDrones[0].index].availableTime = validDrones[0].nextAvailableTime;
-            cout<<validDrones[0].nextAvailableTime<<" "<<validDrones[0].index<<endl<<endl;
+            // cout<<validDrones[0].nextAvailableTime<<" "<<validDrones[0].index<<endl<<endl;
             // singleDrones[validDrones[0].index].remainingBattery = 2000; 
             // drones[singleDrones[validDrones[0].index].droneType].batteryCapacity;
         }
 
     }
-    for(auto x:tempDemandId){
-        cout<<"id is :"<<x<<endl;
-    }
-    int sz = demands.size();
-    cout<<double(demandsMet)/sz<<endl;
+    // for(auto x:tempDemandId){
+    //     cout<<"id is :"<<x<<endl;
+    // }
+    // int sz = demands.size();
+    // cout<<double(demandsMet)/sz<<endl;
     
-    // sort(outputPath.begin(), outputPath.end(), outputPathComparator);
-    vector<outputPathRow>::iterator it;
-
-    for(int i= 0;i<= outputPath.size();i++){
-        outputPathRow row = outputPath[i];
-        cout<<row.droneId<<endl;
-        // cout<<row.demandId<<" ";
-        // cout<<typeid(row.droneId).name()<<" ";
-        // cout<<row.day<<" ";
-        // cout<<row.time<<" ";
-        // cout<<row.x<<" ";
-        // cout<<row.y<<" ";
-        // cout<<row.z<<" ";
-        // cout<<row.activity<<" ";
-        // cout<<row.speed<<" ";
-        // cout<<row.batteryConsumed<<" ";
-        // cout<<row.energyCost<<" ";
-        // cout<<row.totalWeight<<" ";
+    sort(outputPath.begin(), outputPath.end(), outputPathComparator);
+    ofstream myfile;
+    for(auto row:outputPath){
+        myfile.open 
+        outputPath.csv<<"%d",row.demandId<<endl;
+        // cout<<row.demandId<<",";
+        // cout<<row.droneId<<",";
+        // cout<<row.day<<",";
+        // cout<<row.time<<",";
+        // cout<<row.x<<",";
+        // cout<<row.y<<",";
+        // cout<<row.z<<",";
+        // cout<<row.activity<<",";
+        // cout<<row.speed<<",";
+        // cout<<row.batteryConsumed<<",";
+        // cout<<row.energyCost<<",";
+        // cout<<row.totalWeight;
         // cout<<endl;
     }
     // vector<energyConsumption> energyConsumptions;
