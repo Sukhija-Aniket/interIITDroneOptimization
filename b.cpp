@@ -89,6 +89,7 @@ struct singleDrone{
     double nextAvailableTime=0;
     int endTime = 0;
     int lastDemandId=0;
+    double rechargeTime=0, restingTime=0,maintainanceCost=0, energyCost=0;
 
     singleDrone(int dtype,int time,int battery,int indexCounter){
         droneType = dtype;
@@ -177,6 +178,25 @@ struct outputPathRow{
         cout<<endl;
     }
 };
+struct outputCostRow{
+    int droneId;
+    string day;
+    double restingTime, chargingTime, maintainanceCost, energyCost;
+    void printParams(){
+        cout<<"  droneId is "<<droneId;
+        cout<<endl;
+        cout<<"  day is "<<day;
+        cout<<endl;
+        cout<<"  restingTime is "<<restingTime;
+        cout<<endl;
+        cout<<"  chargingTime is "<<chargingTime;
+        cout<<endl;
+        cout<<"  maintainanceCost is "<<maintainanceCost;
+        cout<<endl;
+        cout<<"  energyCost is "<<energyCost;
+        cout<<endl;
+    }
+};
 
 // global variables
 vector<item>items;
@@ -184,6 +204,7 @@ vector<demand>demands;
 vector<singleDrone> singleDrones;
 vector<drone>drones;
 vector<outputPathRow> outputPath;
+vector<outputCostRow> outputCost;
 double chargingCost;
 
 // utility functions
@@ -290,6 +311,34 @@ void AssignOutput(outputPathRow &outputRow, int demandId, int droneId, string da
     outputRow.totalWeight = weight;
 }
 
+void AssignOutputCost(outputCostRow &outputRow, int droneId, string day, double restingTime,double chargingTime,double maintainanceCost,double energyCost){
+    outputRow.droneId = droneId;
+    outputRow.day = day;
+    outputRow.restingTime = restingTime;
+    outputRow.chargingTime = chargingTime;
+    outputRow.maintainanceCost = maintainanceCost;
+    outputRow.energyCost = energyCost;
+}
+
+void changeMapParams(unordered_map<int, outputCostRow> &outputCostMap,vector<string> row){
+    if(row.size()==0)
+        return;
+    outputCostMap[stoi(row[1])].droneId = stoi(row[1]);
+    outputCostMap[stoi(row[1])].restingTime += row[7][0]=='R';
+    outputCostMap[stoi(row[1])].chargingTime += row[7][0]=='C';
+    outputCostMap[stoi(row[1])].day = "Day 1";
+
+    unordered_map<int, pair<double, double>> mapper;
+    mapper[1] = {10,5/3600.0};
+    mapper[2] = {15,8/3600.0};
+    mapper[3] = {20,13/3600.0};
+    mapper[4] = {20,15/3600.0};
+    mapper[5] = {30,20/3600.0};
+    mapper[6] = {50,25/3600.0};
+
+    outputCostMap[stoi(row[1])].maintainanceCost += ((row[7][0] == 'T')?(mapper[drones[stoi(row[1])].droneType+1].second):0);
+    outputCostMap[stoi(row[1])].energyCost += stod(row[10]);
+}
 
 void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
     drone tempDrone = drones[curDrone.droneType];
@@ -787,5 +836,45 @@ int main() {
         myfile<<endl;
     }
     myfile.close();
+    // vector<energyConsumption> energyConsumptions;
+    // vector<speedProfile>speedProfiles;
+
+    {
+    fstream file;
+    file.open("outputPath.csv",ios::in);
+    string word,lines;
+    unordered_map<int,outputCostRow> outputCostMap;
+    getline(file,lines);
+    while(file){
+        row.clear();
+        getline(file,lines);
+        stringstream s(lines);
+        while(getline(s,word,',')){
+            row.push_back(word);
+        }
+        changeMapParams(outputCostMap, row);
+    }
+    for(auto drone:singleDrones){
+        outputCostMap[drone.index].maintainanceCost += drone.maintainanceCost;
+    }
+    ofstream myfile;
+    myfile.open ("outputCost.csv");
+    myfile<<"DroneID, Day, RestingTime (s), Charging time (s), Maintainance Cost ($), Energy Cost ($)\n";
+    for(auto row:outputCostMap){
+        myfile<<row.first<<",";
+        myfile<<"Day 1"<<",";
+        myfile<<row.second.restingTime<<",";
+        myfile<<row.second.chargingTime<<",";
+        myfile<<row.second.maintainanceCost<<",";
+        myfile<<row.second.energyCost;
+        myfile<<endl;
+    }
+    myfile.close();
+    file.close();
+    }
+
+    // // output file
+    // map<string,vector<dronePathOutput>> DronePathOutputs;
+    // vector<droneCostOutput>DroneCostOutputs;
     return 0;
 }
