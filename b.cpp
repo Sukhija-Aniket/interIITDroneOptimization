@@ -86,9 +86,9 @@ struct singleDrone{
     int index;
     double availableTime = 0;
     int remainingBattery;
-    double nextAvailableTime;
+    double nextAvailableTime=0;
     int endTime = 0;
-    int lastDemandId;
+    int lastDemandId=0;
 
     singleDrone(int dtype,int time,int battery,int indexCounter){
         droneType = dtype;
@@ -148,7 +148,7 @@ struct noFlyZone{
 struct outputPathRow{
     int demandId,time,totalWeight = 0;
     double x,y,z,speed, batteryConsumed, energyCost;
-    int droneId;
+    string droneId;
     string day,activity;
     void printParams(){
         cout<<"  DemandId is "<<demandId;
@@ -203,6 +203,22 @@ int getSeconds(string time){
     }
     int Seconds = (stoi(hours)-8) * 3600 + stoi(minutes)*60 + stoi(seconds);
     return Seconds;
+}
+
+string convertToString(int x){
+    x++;
+    int counter = 0;
+    for(int i=0;i<6;i++){
+        if(x>drones[i].droneCount){
+            x -= drones[i].droneCount;
+        } else {
+            string s="";
+            s += "D" + to_string(i+1);
+            s += char(x+64);
+            return s;
+        }
+    }
+    return "error";
 }
 
 bool demandComparator(demand &a,demand &b){
@@ -261,7 +277,7 @@ bool checkOptimalDrone(demand &curDemand,singleDrone &curDrone,vector<singleDron
 
 void AssignOutput(outputPathRow &outputRow, int demandId, int droneId, string day,int time, double x,double y, double z, string activity, double speed, double batteryConsumed, double energyCost, int weight){
     outputRow.demandId = demandId;
-    outputRow.droneId = droneId;
+    outputRow.droneId = convertToString(droneId);
     outputRow.day = day;
     outputRow.time = time;
     outputRow.x = x;
@@ -302,6 +318,7 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
 
     int demandId = curDemand.demandId;
     int droneId = curDrone.index;
+    int droneTypeId = curDrone.droneType;
     int warehouseResting = 180;
     netSpeedXY = netSpeedXY;
     double xyTravel = distanceXY/netSpeedXY;
@@ -313,6 +330,7 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
     double recharge = double((tempDrone.batteryCapacity -(curDrone.remainingBattery-batteryUsage))*36)/50;
 
     curDrone.endTime = max(int(droneEndTime),curDrone.endTime);
+    // cout<<"updating endTime "<<curDrone.endTime<<endl;
     curDrone.lastDemandId = curDemand.demandId;
     for(int i = ceil(droneStartTime);i<=droneEndTime;i++){
         outputPathRow outputRow;
@@ -321,13 +339,13 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             iamx = 0;
             iamy = 0;
             iamz = 0;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy,iamz, "R-WH1", 0, 0, 0, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy,iamz, "R-WH1", 0, 0, 0, drones[droneTypeId].baseWeight);
         }
         else if(i<=droneStartTime+warehouseResting+possibleRestingTimeAtDrop){
             iamx = 0;
             iamy = 0;
             iamz = 0;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy,iamz, "PU-WH1", 0, 0, 0, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy,iamz, "PU-WH1", 0, 0, 0, drones[droneTypeId].baseWeight);
         }
         else if(i<=droneStartTime+warehouseResting+xyTravel + possibleRestingTimeAtDrop){
             iamx = (i - (droneStartTime+warehouseResting+possibleRestingTimeAtDrop))*netSpeedXY*curDemand.x/distanceXY;
@@ -335,7 +353,7 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             iamz = 0;
             double iamxyPower = netWeight * (tempDrone.ec.a + tempDrone.ec.b* (netSpeedXY));
             double iamxyEnergy = iamxyPower * (distanceXY/netSpeedXY)*chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedXY, iamxyPower, iamxyEnergy, drones[droneId].baseWeight+items[curDemand.itemId].weight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedXY, iamxyPower, iamxyEnergy, drones[droneTypeId].baseWeight+items[curDemand.itemId].weight);
         }
         else if(i - (droneStartTime + warehouseResting + xyTravel+possibleRestingTimeAtDrop)<1.0){
             // cout<<"this is the value "<<(i - (droneStartTime + warehouseResting + xyTravel))<<endl;
@@ -346,13 +364,13 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             iamz = 0;
             double iamxyPower = netWeight * (tempDrone.ec.a + tempDrone.ec.b* (netSpeedXY));
             double iamxyEnergy = iamxyPower * (distanceXY/netSpeedXY)*chargingCost;
-            AssignOutput(outputRow,demandId,droneId,"Day 1",i,iamx,iamy,iamz,"T-L",netSpeedXY,iamxyPower,iamxyEnergy,drones[droneId].baseWeight + items[curDemand.itemId].weight);
+            AssignOutput(outputRow,demandId,droneId,"Day 1",i,iamx,iamy,iamz,"T-L",netSpeedXY,iamxyPower,iamxyEnergy,drones[droneTypeId].baseWeight + items[curDemand.itemId].weight);
         }
         else if(i<=droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop){
             iamz = (int(i - (droneStartTime+warehouseResting+xyTravel+possibleRestingTimeAtDrop)))*netSpeedZUp;
             double iamzPower = netWeight * (tempDrone.ec.a + tempDrone.ec.c * (netSpeedZUp));
             double iamzEnergy = iamzPower * chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedZUp, iamzPower, iamzEnergy, drones[droneId].baseWeight+items[curDemand.itemId].weight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedZUp, iamzPower, iamzEnergy, drones[droneTypeId].baseWeight+items[curDemand.itemId].weight);
         }
 
         else if(i - (droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop) < 1.0){
@@ -360,26 +378,26 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             iamz = curDemand.z;
             double iamzPower = netWeight * (tempDrone.ec.a + tempDrone.ec.c * (netSpeedZUp));
             double iamzEnergy = iamzPower * chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedZUp, iamzPower, iamzEnergy, drones[droneId].baseWeight+items[curDemand.itemId].weight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-L", netSpeedZUp, iamzPower, iamzEnergy, drones[droneTypeId].baseWeight+items[curDemand.itemId].weight);
         }
         
         else if(i<=droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime){
             iamx = int(iamx);
             iamy = int(iamy);
             iamz = int(iamz);
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "D"+to_string(curDemand.demandId), 0, 0, 0, drones[droneId].baseWeight+items[curDemand.itemId].weight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "D"+to_string(curDemand.demandId), 0, 0, 0, drones[droneTypeId].baseWeight+items[curDemand.itemId].weight);
         }
         else if(i<=droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn){
             iamz = curDemand.z - (i - (droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime))*netSpeedReturn;
             double iamzPower = tempDrone.baseWeight * (tempDrone.ec.a + tempDrone.ec.c * (netSpeedReturn));
             double iamzEnergy = iamzPower * chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamzPower, iamzEnergy, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamzPower, iamzEnergy, drones[droneTypeId].baseWeight);
         }
         else if(i -(droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn)<1.0){
             iamz = 0;
             double iamzPower = tempDrone.baseWeight * (tempDrone.ec.a + tempDrone.ec.c * (netSpeedReturn));
             double iamzEnergy = iamzPower * chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamzPower, iamzEnergy, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamzPower, iamzEnergy, drones[droneTypeId].baseWeight);
         }
         else if(i<=droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn+xyReturn){
             iamx = curDemand.x - (int(i - (droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn)))*netSpeedReturn*curDemand.x/distanceXY;
@@ -387,7 +405,7 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             iamz = 0;
             double iamxyPower = tempDrone.baseWeight * (tempDrone.ec.a + tempDrone.ec.b* (netSpeedReturn));
             double iamxyEnergy = iamxyPower * (distanceXY/netSpeedReturn)*chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamxyPower, iamxyEnergy, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamxyPower, iamxyEnergy, drones[droneTypeId].baseWeight);
         }
         else if(i-(droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn+xyReturn)<1.0){
             if(curDemand.x >= 0){
@@ -402,10 +420,10 @@ void OptimalDroneParamsPusher(demand &curDemand,singleDrone &curDrone){
             }
             double iamxyPower = tempDrone.baseWeight * (tempDrone.ec.a + tempDrone.ec.b* (netSpeedReturn));
             double iamxyEnergy = iamxyPower * (distanceXY/netSpeedReturn)*chargingCost;
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamxyPower, iamxyEnergy, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, iamx, iamy, iamz, "T-E", netSpeedReturn, iamxyPower, iamxyEnergy, drones[droneTypeId].baseWeight);
         }
         else if(i<=droneStartTime+warehouseResting+xyTravel+zTravel+possibleRestingTimeAtDrop+dropingTime+zReturn+xyReturn+recharge){
-            AssignOutput(outputRow, demandId, droneId, "Day 1",i, 0, 0, 0, "C-WH1", 0, 0, 0, drones[droneId].baseWeight);
+            AssignOutput(outputRow, demandId, droneId, "Day 1",i, 0, 0, 0, "C-WH1", 0, 0, 0, drones[droneTypeId].baseWeight);
         }
         // else{
         //     cout<<"MAdarchod case\n";
@@ -451,7 +469,7 @@ int main() {
     items.push_back(tempItem);
 
     fstream file;
-    file.open("Demand_Day2.csv",ios::in);
+    file.open("Demand.csv",ios::in);
     string word,lines;
     vector<string>row;
     vector<chargingInfo>chargingInfos;
@@ -488,7 +506,7 @@ int main() {
         tempDrone = drone(5,10000,5,10,5000,4,50,25);
         drones.push_back(tempDrone); 
     getline(file,lines);
-    int cnt = 50;
+    int cnt = 30;
     while(file && cnt>0){
         cnt--;
         row.clear();
@@ -498,6 +516,7 @@ int main() {
             row.push_back(word);
         }
         demand temp = demand(row);
+        if(row[0]!="WH1") continue;
         demands.push_back(temp);
         // for(auto x:demands){
         //     cout<<x.deliveryFailure<<" "<<x.x<<" "<<x.y<<" "<<x.z<<" "<<endl;
@@ -506,7 +525,7 @@ int main() {
     file.close();
     // input file 2;
     // cout<<"chal ja bc"<<endl;
-    file.open("Parameters1.csv",ios::in);
+    file.open("Parameters.csv",ios::in);
     int maxSpeed;
     int rownumber=0;
     getline(file,lines);
@@ -710,6 +729,8 @@ int main() {
             demandsMet++;
             OptimalDroneParamsPusher(curDemand, validDrones[0]);
             singleDrones[validDrones[0].index].availableTime = validDrones[0].nextAvailableTime;
+            singleDrones[validDrones[0].index].endTime = validDrones[0].endTime;
+            singleDrones[validDrones[0].index].lastDemandId = validDrones[0].lastDemandId;
             // cout<<validDrones[0].nextAvailableTime<<" "<<validDrones[0].index<<endl<<endl;
             // singleDrones[validDrones[0].index].remainingBattery = 2000; 
             // drones[singleDrones[validDrones[0].index].droneType].batteryCapacity;
@@ -719,16 +740,23 @@ int main() {
     for(auto drone:singleDrones){
         // if(drone.endTime == 0) continue;
         if(drone.endTime>=14400){
+            // cout<<drone.index<<" "<<drone.endTime<<endl;
             outputPathRow outputRow;
             AssignOutput(outputRow, drone.lastDemandId, drone.index, "Day 1",drone.endTime+1, 0, 0, 0, "End", 0, 0, 0, drones[drone.index].baseWeight);
+            outputPath.push_back(outputRow);
+            // outputPath.back().printParams();
+            // cout<<endl;
         }
         else {
             for(int i=drone.endTime+1;i<=14400;i++){
                 outputPathRow outputRow;
-                AssignOutput(outputRow,drone.lastDemandId,drone.index,"Day 1",i, 0, 0, 0, "R-WH1", 0, 0, 0, drones[drone.index].baseWeight);
+                AssignOutput(outputRow,drone.lastDemandId,drone.index,"Day 1",i, 0, 0, 0, "R-WH1", 0, 0, 0, drones[drone.droneType].baseWeight);
+                outputPath.push_back(outputRow);
             }
+            // cout<<drone.lastDemandId<<endl;
             outputPathRow outputRow;
-            AssignOutput(outputRow, drone.lastDemandId, drone.index, "Day 1",14401, 0, 0, 0, "End", 0, 0, 0, drones[drone.index].baseWeight);
+            AssignOutput(outputRow, drone.lastDemandId, drone.index, "Day 1",14401, 0, 0, 0, "End", 0, 0, 0, drones[drone.droneType].baseWeight);
+            outputPath.push_back(outputRow);
         }
 
     }
@@ -740,7 +768,7 @@ int main() {
     
     sort(outputPath.begin(), outputPath.end(), outputPathComparator);
     ofstream myfile;
-    myfile.open ("outputPath.csv");
+    myfile.open ("outputPath_scenario3_day3.csv");
     myfile<<"demandId,droneId,day,time,x,y,z,activity,speed,batteryConsumed,energyCost,totalWeight\n";
     
     for(auto row:outputPath){
@@ -759,15 +787,5 @@ int main() {
         myfile<<endl;
     }
     myfile.close();
-    // vector<energyConsumption> energyConsumptions;
-    // vector<speedProfile>speedProfiles;
-
-
-
-
-
-    // // output file
-    // map<string,vector<dronePathOutput>> DronePathOutputs;
-    // vector<droneCostOutput>DroneCostOutputs;
-
+    return 0;
 }
